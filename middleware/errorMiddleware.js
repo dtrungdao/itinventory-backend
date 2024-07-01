@@ -1,4 +1,4 @@
-//function that can be executed between request and response cycle
+//Function that can be executed between request and response cycle
 
 const errorHandler = (err, req, res, next) => {
 
@@ -12,6 +12,3 @@ const errorHandler = (err, req, res, next) => {
 };
 
 module.exports = errorHandler;
-
-//TODO: xem lỗi crash const statusCode = res.statusCode ? res.statusCode : 500
-//TypeError: Cannot read properties of undefined (reading 'statusCode')

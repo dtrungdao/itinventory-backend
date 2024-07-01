@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { registerUser, loginUser, logoutUser, getUser, getUsers,
     loginStatus, updateUser, updatePassword,
- changePassword } = require("../controllers/userController");
+  } = require("../controllers/userController");
 const protectLoginUser = require("../middleware/authMiddleware");
 
 //Expected: information that frontend send to me will be POSTED to backend
@@ -15,7 +15,6 @@ router.get("/getusers", protectLoginUser, getUsers);
 router.get("/loggedin", loginStatus);
 router.patch("/update", protectLoginUser, updateUser);
 router.patch("/updatepassword", protectLoginUser, updatePassword);
-router.put("/changepassword/:resetToken", changePassword);
 
 
 

@@ -1,20 +1,22 @@
+//Library async-handler is imported and used from this website https://www.npmjs.com/package/express-async-handler
 const asyncHandler = require("express-async-handler");
 const Product = require("../models/productModel");
 const { fileSizeFormatter } = require("../utils/fileUpload");
 
-
+//Management of creating a product in backend
 const createProduct = asyncHandler (async(req, res) => {
     const {name, comment, category, model, inventorynumber, serialnumber, 
         guarantee, price, statusDevice, belongTo, description} = req.body
-    
-    //Validate product
+
+
+    //Validate if required attributes are missing
     if(!name || !category || !inventorynumber || !price || !statusDevice || !model
      ){
         res.status(400)
         throw new Error ("All required fields have to be filled")
     }
 
-    //Manage image upload
+    //Management image upload to backend
     let fileData = {}
     if(req.file){
         fileData = {
@@ -25,26 +27,27 @@ const createProduct = asyncHandler (async(req, res) => {
         }
     }
 
-    //Create product
+    //Create a product after checking tasks
     const product = await Product.create({
         user: req.user.id, name, comment, category, model, inventorynumber, 
         serialnumber, guarantee, price, statusDevice, belongTo, description, image:fileData
     })
 
+    //Response API status
     res.status(201).json(product)
 });
 
-//Get all products
+//Management get all products in backend
 const getProducts = asyncHandler (async (req, res) =>{
     const products = await Product.find().sort("-createdAt");
     res.status(200).json(products)
 })
 
-//Get one product
+//Management get one product in backend
 const getProduct = asyncHandler (async (req, res) =>{
     const product = await Product.findById(req.params.id)
-
-    //Error if product doesn't exist
+    
+    //Response error if product doesn't exist
     if(!product){
         res.status(404)
         throw new Error ("Product not found")
@@ -52,27 +55,21 @@ const getProduct = asyncHandler (async (req, res) =>{
     res.status(200).json(product)
 })
 
-//Delete product
+//Management delete product in backend
 const deleteProduct = asyncHandler (async (req, res) =>{
     const product = await Product.findById(req.params.id)
 
-    //Error if product doesn't exist
+    //Response error if product doesn't exist
     if(!product){
         res.status(404)
         throw new Error ("Product not found")
     }
 
-    //Authorize user for product
-    /*if(product.user.toString() !== req.user.id){
-        res.status(401)
-        throw new Error ("User not authorized")
-    }*/
-
     await product.deleteOne()
     res.status(200).json(product);
 })
 
-//Update a product
+//Management update a product in backend
 const updateProduct = asyncHandler (async (req, res) =>{
     const {name, category, inventorynumber, serialnumber, model, guarantee, 
         price, statusDevice, belongTo, description, comment} = req.body
@@ -82,19 +79,12 @@ const updateProduct = asyncHandler (async (req, res) =>{
     const product = await Product.findById(id)
     
     //Validation not necessary because product is valid after creating
-    //Error if product doesn't exist
+    //Response error if product doesn't exist
     if(!product){
         res.status(404)
         throw new Error ("Product not found")
     }
-
-    //Authorize user for product
-    /*if(product.user.toString() !== req.user.id){
-        res.status(401)
-        throw new Error ("User not authorized")
-    }*/
-
-    //Manage image upload
+    //Management image upload to backend
     let fileData = {}
     if(req.file){
         fileData = {
@@ -105,12 +95,30 @@ const updateProduct = asyncHandler (async (req, res) =>{
         }
     }
 
-    //Update product
+    // Log the data to update
+    console.log("ID:", id);
+    console.log("Data to update:", {
+        name,
+        category,
+        inventorynumber,
+        serialnumber,
+        model,
+        guarantee,
+        price,
+        statusDevice,
+        belongTo,
+        description,
+        comment,
+        image: Object.keys(fileData).length === 0 ? product?.image : fileData,
+    });
+
+
+    //Update product after tasks
     const updatedProduct = await Product.findByIdAndUpdate(
         {_id: id},
         {
-            name, category, inventorynumber, serialnumber, model, price, 
-            guarantee, description, statusDevice, belongTo, comment,
+            name, category, inventorynumber, serialnumber, model, guarantee, 
+            price, statusDevice, belongTo, description, comment,
             image: Object.keys(fileData).length === 0 ? product?.image : fileData,
         },
         {
@@ -118,7 +126,6 @@ const updateProduct = asyncHandler (async (req, res) =>{
             runValidators: true
         }
     )
-
     res.status(201).json(updatedProduct)
 });
 

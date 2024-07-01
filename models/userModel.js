@@ -22,7 +22,6 @@ const userSchema = mongoose.Schema ({
         type: String, 
         required: [true, "Please add a password"], 
         minLength: [6, "Password must be more than 6 characters"], 
-        //maxLength: [23, "Password must be up to 23 characters"], 
     },
 
     photo:{
@@ -33,7 +32,6 @@ const userSchema = mongoose.Schema ({
 
     department: {
         type: String,
-        required: [true, "Please add employee's department"],
         trim: true
     },
 
@@ -49,7 +47,6 @@ const userSchema = mongoose.Schema ({
 
     bio:{
         type: String,
-        maxLength: [250, "Bio must be up to 250 characters"],  
         default: "bio"
     }
 },{

@@ -4,45 +4,47 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs");
-//const { use } = require("../routes/userRoute");
 const Token = require("../models/tokenModel");
 const crypto = require("crypto")
 
+//Create token when registering new account in backend
 const createToken = (id) => {
     return jwt.sign({id}, process.env.JWT_SECRET, {expiresIn: "1d"})
 };
 
-//Cases when user is registered
+//All cases when user is registered
 const registerUser = asyncHandler(async (req, res) => {
     const {name, email, password} = req.body
 
-    // Validation
+    // Validate if fields are missing
     if (!name || !email || !password){
         res.status(400)
         throw new Error("Please fill in all required fields")
     }
 
-    if (password.length < 6){
+    //Set password policy
+    if (password.length < 8){
         res.status(400)
-        throw new Error("Password must have more than 6 characters")
+        throw new Error("Password must have more than 8 characters")
     }
 
-    //check if user email already exists
+    //Check if user email exists
     const userExists = await User.findOne ({email})
 
     if (userExists) {
+        //Response error if user already exists
         res.status(400)
         throw new Error("Email is already used")
     }
 
-    //create new user
+    //Create a new user after tasks
     const user = await User. create({
         name,
         email,
         password,
     })
 
-    //create token for user
+    //Create a token for user
     const token = createToken(user._id);
 
     //Send HTTP only cookie
@@ -54,7 +56,7 @@ const registerUser = asyncHandler(async (req, res) => {
         secure: true
     })
 
-    //if user is created
+    //Response after creating a user
     if (user){
         const {_id, name, email, photo, department, phone, bio} = user
         res.status(201).json({
@@ -71,13 +73,13 @@ const loginUser = asyncHandler(async(req, res) => {
 
     const {email, password} = req.body
 
-    //Error when email and password is missing
+    //Response error when email and password is missing
     if (!email || !password){
         res.status(400)
         throw new Error("Please add email and password")        
     }
 
-    //Error when user doesn't exist
+    //Response error when user doesn't exist
     const user = await User.findOne({email})
 
     if(!user){
@@ -85,10 +87,10 @@ const loginUser = asyncHandler(async(req, res) => {
         throw new Error("User is not registered")   
     }
 
-    //Error when password is not correct
+    //Check if password is not correct
     const correctPassword = await bcrypt.compare(password, user.password)
 
-    //create token for user
+    //create token for existing user
     const token = createToken(user._id);
 
     //Send HTTP only cookie
@@ -100,9 +102,10 @@ const loginUser = asyncHandler(async(req, res) => {
         secure: true
     })
 
+    //Response after logging in
     if (user && correctPassword){
         const {_id, name, email, photo, department, phone, bio} = user;
-        res.status(200).json({//has to be explained
+        res.status(200).json({
             _id, name, email, photo, phone, department, bio, token,
     });
     }
@@ -125,10 +128,11 @@ const logoutUser = asyncHandler(async(req, res) => {
     return res.status(200).json({message: "Logout successful"});
 });
 
-// Get user information???
+// Get user information
 const getUser = (async (req, res) => {
     const user = await User.findById(req.user._id)
 
+    //Response after getting user information
     if (user){
         const {_id, name, email, photo, department, phone, bio} = user
         res.status(200).json({
@@ -141,7 +145,7 @@ const getUser = (async (req, res) => {
 
 });
 
-//Get all users
+//Get all users information
 const getUsers = asyncHandler (async (req, res) =>{
     const users = await User.find({},{name:1}); //No createAt(), otherwise there is error
     res.status(200).json(users)
@@ -150,6 +154,7 @@ const getUsers = asyncHandler (async (req, res) =>{
 //Get login status
 const loginStatus = asyncHandler (async (req, res) => {
 
+    //Response error if token doesn't exist
     const token = req.cookies.token
     if (!token) return res.json(false)
 
@@ -160,9 +165,11 @@ const loginStatus = asyncHandler (async (req, res) => {
     return res.json(false)
 })
 
+//Cases when updating user
 const updateUser = asyncHandler (async (req, res) => {
     const user = await User.findById(req.user._id)
 
+    //Get and update new user information
     if (user) {
         const {name, email, photo, department, phone, bio} = user;
         user.email = email;
@@ -191,6 +198,7 @@ const updateUser = asyncHandler (async (req, res) => {
     }
 })
 
+//Cases when updating
 const updatePassword = asyncHandler (async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -200,7 +208,7 @@ const updatePassword = asyncHandler (async (req, res) => {
         res.status(400)
         throw new Error ("User not found");
     }
-    //Validation
+    //Validate if fields are missing
     if (!oldPassword || !newPassword){
         res.status(400)
         throw new Error ("Passwords have to be filled");
@@ -220,93 +228,6 @@ const updatePassword = asyncHandler (async (req, res) => {
     }
 })
 
-/*const forgetPassword = asyncHandler (async(req, res) =>{
-    const {email} = req.body
-    const user = await User.findOne({email})
-
-    if(!user){
-        res.status(400)
-        throw new Error ("Email not existed");
-    }
-
-    //Delete existed token
-    let token = await Token.findOne({userID: user._id})
-    if(token){
-        await token.deleteOne()
-    }
-
-    //Reset token
-    let resetToken = crypto.randomBytes(32).toString("hex") + user._id
-    console.log(resetToken)
-
-    //Hash token
-    const hashToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-
-    //Save token to database
-    await new Token({
-        userID: user._id,
-        token: hashToken,
-        createdAt: Date.now(),
-        expireAt: Date.now() + 30 * (60*1000) //Token expires in 30mins
-    }).save()
-
-    //Reset Email URL construction
-    const resetURL = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`
-
-    //Reset Email
-    const message = `
-        <h2>Hello ${user.name}</h2>
-        <p>Please use the url below to reset your password</p>
-        <p>This reset link is valid for only 30 minutes.</p>
-        <a href=${resetURL} clicktracking=off>${resetURL}</a>
-
-        <p>Regards ...< /p>
-        <p>Pinvent Team</p>
-    `;
-    const subject = "Password reset request"
-    const send_to = user.email
-    const sent_from = process.env.EMAIL_USER
-    
-    try {
-        await sendEmail(subject, message, send_to, sent_from)
-        res.status(200).json({success: true, message: "Reset Email Sent"})
-    } catch (error) {
-        res.status(500)
-        throw new Error("Email is not sent")
-    }
-}); */
-
-//Change password link
-const changePassword = asyncHandler(async (req, res) => {
-    const { password } = req.body;
-    const { resetToken } = req.params;
-    
-    //Hash token, then compare to Token in DB
-    const hashToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
-
-    //Compare to token in DB
-    const userToken = await Token.findOne({
-        token: hashToken,
-        expireAt: {$gt: Date.now()}
-    });
-
-    if(!userToken){
-        res.status(404)
-        throw new Error("Invalid or expired token")
-    }
-
-    //Find user
-    const user = await User.findOne({_id: userToken.userID})
-    user.password = password
-    await user.save()
-    res.status(200).json({
-        message: "Password changed, please log in again"
-    });
-});
-
 module.exports = {
     registerUser,
     loginUser,
@@ -316,5 +237,4 @@ module.exports = {
     loginStatus,
     updateUser,
     updatePassword,
-    changePassword
 };

@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken")
 const protectLoginUser = asyncHandler (async (req, res, next) => {
     try {
         const token = req.cookies.token
+
+        //Response error when no token is found
         if (!token){
             res.status(401)
             throw new Error("Not authorized, please log in")
@@ -13,16 +15,17 @@ const protectLoginUser = asyncHandler (async (req, res, next) => {
         //Verify token
         const verified = jwt.verify(token, process.env.JWT_SECRET)
 
-        //Get userif from token
+        //Get user id from existing token
         const user = await User.findById(verified.id).select("-password") //receive all information except user password
 
+        //response error when user is not found
         if(!user){
             res.status(401)
             throw new Error("User not found")
         }
 
         req.user = user
-        next() //other codes that need to run after middleware will run
+        next() //other neccessary codes will run after middleware 
 
     } catch (error) {
         res.status(401)

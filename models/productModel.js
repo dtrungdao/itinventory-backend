@@ -43,7 +43,7 @@ const productSchema = mongoose.Schema({
     },
 
     guarantee: {
-        type: Date,
+        type: String,
         trim: true
     },
 
@@ -74,7 +74,6 @@ const productSchema = mongoose.Schema({
         ref: 'user'
     },
 
-
     comment: {
         type: String,
         trim: true
@@ -84,7 +83,6 @@ const productSchema = mongoose.Schema({
         type: Object,
         default:{}
     },
-
 
 }, {
     timestamps: true,
