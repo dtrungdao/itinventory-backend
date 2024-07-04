@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 
 //Resolve conflict when requesting from backend to frontend
 app.use(cors({
-    origin: ["http://localhost:3000", "https://telit-inventory.vercel.app/"],
+    origin: ["http://localhost:3000", "https://telit-inventory.vercel.app"],
     credentials: true
 }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
