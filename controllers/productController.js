@@ -7,6 +7,7 @@ const { fileSizeFormatter } = require("../utils/fileUpload");
 const createProduct = asyncHandler (async(req, res) => {
     const {name, comment, category, model, inventorynumber, serialnumber, 
         guarantee, price, statusDevice, belongTo, description} = req.body
+        console.log("Body ne: ",req.body)
 
 
     //Validate if required attributes are missing
@@ -72,11 +73,12 @@ const deleteProduct = asyncHandler (async (req, res) =>{
 //Management update a product in backend
 const updateProduct = asyncHandler (async (req, res) =>{
     const {name, category, inventorynumber, serialnumber, model, guarantee, 
-        price, statusDevice, belongTo, description, comment} = req.body
-    const {id} = req.params
-
+        price, statusDevice, belongTo, description, comment} = req.body;
+    const {id} = req.params;
+    console.log("ID ne: ", id)
     //Find a product to update
     const product = await Product.findById(id)
+    console.log("Day la san pham: ", product)
     
     //Validation not necessary because product is valid after creating
     //Response error if product doesn't exist
